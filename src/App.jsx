@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, query, where, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import heroImg from './assets/hero.png'
 import './App.css'
 
 // Firebase 설정 (본인의 Firebase 프로젝트 설정값으로 교체 필요)
@@ -132,8 +131,11 @@ function App() {
     // 1분 이내에 활동한 사용자만 온라인으로 간주
     const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.toMillis() < 60000) : false;
     
-    return dist <= filterDist && isOnline;
+    return (filterDist === Infinity || dist <= filterDist) && isOnline;
   });
+
+  // 나를 포함한 전체 표시 리스트
+  const displayUsers = me ? [me, ...nearbyUsers] : nearbyUsers;
 
   // 선택된 사용자 정보 찾기
   const selectedUser = users.find(u => u.id === selectedUserId);
@@ -142,34 +144,41 @@ function App() {
     <div className="chat-app">
       <section id="center">
         <header>
-          <h1>{filterDist}m</h1>
+          <h1>{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1>
           <div className="filter-buttons">
             <button onClick={() => setFilterDist(300)}>300m</button>
             <button onClick={() => setFilterDist(500)}>500m</button>
             <button onClick={() => setFilterDist(1000)}>1km</button>
+            <button onClick={() => setFilterDist(Infinity)}>무제한</button>
           </div>
         </header>
 
         <div className="hero">
-          <div className="radar-view">
-            {myLocation ? (
-              <div className="user-marker">
-                {me?.message && <div className="chat-bubble" onClick={() => setSelectedUserId(userId)}>{me.message}</div>}
-                <div className="marker-label">나 (현재 위치)</div>
-                <img src={heroImg} className="user-icon mine" width="60" alt="me" />
-              </div>
-            ) : (
-              <p>위치 정보를 불러오는 중...</p>
-            )}
-            
-            {nearbyUsers.map(user => (
-              <div key={user.id} className="user-marker" onClick={() => setSelectedUserId(user.id)}>
-                {user.message && <div className="chat-bubble">{user.message}</div>}
-            <img src={heroImg} className="user-icon" width="50" alt="user" />
-                <span className="user-name">주변 사용자</span>
-              </div>
-            ))}
-          </div>
+          {!myLocation ? (
+            <p style={{ padding: '20px' }}>위치 정보를 불러오는 중...</p>
+          ) : (
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>메시지</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayUsers.map(user => {
+                  const isMe = user.id === userId;
+                  const distanceValue = isMe ? "-" : `${Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon))}m`;
+                  
+                  return (
+                    <tr key={user.id} className={isMe ? 'is-me' : ''} onClick={() => setSelectedUserId(user.id)}>
+                      <td>{isMe ? "나" : "사용자"} ({distanceValue})</td>
+                      <td className="msg-cell">{user.message || ""}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <form className="chat-input-form" onSubmit={sendMessage}>
@@ -196,21 +205,6 @@ function App() {
               )) || <p>기록이 없습니다.</p>}
             </div>
           </div>
-        )}
-      </section>
-
-      <section id="user-list">
-        <h2>근처 사용자 목록</h2>
-        {myLocation ? (
-          <ul>
-            {nearbyUsers.map(user => (
-              <li key={user.id}>
-              사용자({user.id.slice(0, 5)}) - {Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon))}m
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>내 위치를 공유해야 목록을 볼 수 있습니다.</p>
         )}
       </section>
     </div>
