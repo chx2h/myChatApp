@@ -154,7 +154,7 @@ function App() {
     <div className="chat-app">
       <section id="center">
         <header>
-          <h1 className="distance-display">{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1>
+          {/* <h1 className="distance-display">{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1> */}
           <div className="filter-buttons">
             <button 
               className={filterDist === 300 ? 'active' : ''} 
