@@ -67,15 +67,24 @@ function App() {
 
   // 2. 내 위치 및 정보 Firestore 업데이트
   useEffect(() => {
-    if (userId && myLocation) {
-      const userDoc = doc(db, 'users', userId);
+    if (!userId || !myLocation) return;
+
+    const userDoc = doc(db, 'users', userId);
+    const updateStatus = () => {
       setDoc(userDoc, {
         uid: userId,
         lat: myLocation.lat,
         lon: myLocation.lon,
         lastSeen: serverTimestamp()
       }, { merge: true });
-    }
+    };
+
+    // 위치가 바뀔 때 즉시 업데이트
+    updateStatus();
+
+    // 움직이지 않아도 30초마다 활동 시간 갱신 (하트비트)
+    const heartbeat = setInterval(updateStatus, 30000);
+    return () => clearInterval(heartbeat);
   }, [userId, myLocation]);
 
   // 3. 실시간으로 모든 사용자 데이터 가져오기
@@ -129,8 +138,8 @@ function App() {
     
     // 거리 계산
     const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
-    // 1분 이내에 활동한 사용자만 온라인으로 간주
-    const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.toMillis() < 60000) : false;
+    // 1분 이내에 활동한 사용자만 온라인으로 간주 (Firestore Timestamp는 Date 객체로 변환됨)
+    const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.getTime() < 60000) : false;
     
     return (filterDist === Infinity || dist <= filterDist) && isOnline;
   });
