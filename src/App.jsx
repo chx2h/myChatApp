@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, query, where, arrayUnion } from 'firebase/firestore';
+import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, query, where, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import heroImg from './assets/hero.png'
 import './App.css'
@@ -92,6 +92,22 @@ function App() {
     return () => unsubscribe();
   }, [userId]);
 
+  // 4. 페이지 종료 시 데이터 삭제 (나갔을 때 즉시 사라지게 함)
+  useEffect(() => {
+    if (!userId) return;
+
+    const handleCleanup = async () => {
+      const userDoc = doc(db, 'users', userId);
+      await deleteDoc(userDoc);
+    };
+
+    window.addEventListener('beforeunload', handleCleanup);
+    return () => {
+      handleCleanup();
+      window.removeEventListener('beforeunload', handleCleanup);
+    };
+  }, [userId]);
+
   // 메시지 전송 함수
   const sendMessage = (e) => {
     e.preventDefault();
@@ -110,8 +126,13 @@ function App() {
   const me = users.find(u => u.id === userId);
   const nearbyUsers = users.filter(user => {
     if (!myLocation || user.id === userId) return false;
+    
+    // 거리 계산
     const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
-    return dist <= filterDist;
+    // 1분 이내에 활동한 사용자만 온라인으로 간주
+    const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.toMillis() < 60000) : false;
+    
+    return dist <= filterDist && isOnline;
   });
 
   // 선택된 사용자 정보 찾기
