@@ -132,7 +132,7 @@ function App() {
     // 1분 이내에 활동한 사용자만 온라인으로 간주
     const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.toMillis() < 60000) : false;
     
-    return dist <= filterDist && isOnline;
+    return (filterDist === Infinity || dist <= filterDist) && isOnline;
   });
 
   // 나를 포함한 전체 표시 리스트
@@ -145,11 +145,24 @@ function App() {
     <div className="chat-app">
       <section id="center">
         <header>
-          <h1>{filterDist}m</h1>
+          <h1 className="distance-display">{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1>
           <div className="filter-buttons">
-            <button onClick={() => setFilterDist(300)}>300m</button>
-            <button onClick={() => setFilterDist(500)}>500m</button>
-            <button onClick={() => setFilterDist(1000)}>1km</button>
+            <button 
+              className={filterDist === 300 ? 'active' : ''} 
+              onClick={() => setFilterDist(300)}
+            >300m</button>
+            <button 
+              className={filterDist === 500 ? 'active' : ''} 
+              onClick={() => setFilterDist(500)}
+            >500m</button>
+            <button 
+              className={filterDist === 1000 ? 'active' : ''} 
+              onClick={() => setFilterDist(1000)}
+            >1km</button>
+            <button 
+              className={filterDist === Infinity ? 'active' : ''} 
+              onClick={() => setFilterDist(Infinity)}
+            >무제한</button>
           </div>
         </header>
 

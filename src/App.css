@@ -29,6 +29,37 @@
   box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
 }
 
+.distance-display {
+  color: #7c3aed; /* 진한 파스텔 보라색으로 가독성 확보 */
+  font-size: 2.5rem;
+  margin-bottom: 50px;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8); /* 밝은 테두리 효과 */
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filter-buttons button {
+  background-color: #ffffff;
+  border: 1.5px solid #ddd;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-buttons button.active {
+  background-color: #a78bfa;
+  color: white;
+  border-color: #a78bfa;
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+}
+
 .hero {
   position: relative;
   width: 100%;
