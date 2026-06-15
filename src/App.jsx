@@ -173,7 +173,7 @@ function App() {
             <div className="radar-container">
               {displayUsers.map(user => {
                 const isMe = user.id === userId;
-                const distanceValue = isMe ? "나" : `${Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon))}m`;
+                const distanceValue = isMe ? "나" : `${Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon)).toLocaleString()}m`;
                 
                 // ID를 기반으로 결정론적인(안정적인) 무작위 위치 생성 (10% ~ 90% 사이)
                 let hash = 0;
