@@ -42,7 +42,6 @@ function App() {
   const [filterDist, setFilterDist] = useState(1000); // 기본 1km
   const [users, setUsers] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [testUsers, setTestUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
   // 1. 익명 로그인 및 위치 추적 시작
@@ -107,34 +106,16 @@ function App() {
     setInputText('');
   };
 
-  // 가상 사용자 5명 생성 함수
-  const addTestUsers = () => {
-    if (!myLocation) {
-      alert("내 위치 정보를 먼저 불러와야 합니다.");
-      return;
-    }
-    const fakeUsers = Array.from({ length: 5 }).map((_, i) => ({
-      id: `test-user-${i}-${Math.random().toString(36).substring(2, 7)}`,
-      lat: myLocation.lat + (Math.random() - 0.5) * 0.01, // 약 500m~1km 내외 오차
-      lon: myLocation.lon + (Math.random() - 0.5) * 0.01,
-      message: `테스트 메시지입니다! #${i + 1}`,
-      history: [{ text: `안녕하세요! 가상 사용자 ${i + 1}입니다.`, time: new Date().toLocaleTimeString() }],
-      timestamp: new Date()
-    }));
-    setTestUsers(fakeUsers);
-  };
-
   // 내 정보와 다른 사용자 정보를 분리
-  const allUsers = [...users, ...testUsers];
-  const me = allUsers.find(u => u.id === userId);
-  const nearbyUsers = allUsers.filter(user => {
+  const me = users.find(u => u.id === userId);
+  const nearbyUsers = users.filter(user => {
     if (!myLocation || user.id === userId) return false;
     const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
     return dist <= filterDist;
   });
 
   // 선택된 사용자 정보 찾기
-  const selectedUser = allUsers.find(u => u.id === selectedUserId);
+  const selectedUser = users.find(u => u.id === selectedUserId);
 
   return (
     <div className="chat-app">
@@ -145,7 +126,6 @@ function App() {
             <button onClick={() => setFilterDist(300)}>300m</button>
             <button onClick={() => setFilterDist(500)}>500m</button>
             <button onClick={() => setFilterDist(1000)}>1km</button>
-            <button onClick={addTestUsers} style={{ backgroundColor: '#ff4757', color: 'white' }}>Test</button>
           </div>
         </header>
 
