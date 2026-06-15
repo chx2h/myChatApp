@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, query, where, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
@@ -43,11 +43,19 @@ function App() {
   const [users, setUsers] = useState([]);
   const [inputText, setInputText] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [error, setError] = useState(null);
+
+  const radarRef = useRef(null); // 레이더 컨테이너의 DOM 요소를 참조하기 위한 ref
+  const [radarDimensions, setRadarDimensions] = useState({ width: 0, height: 0 }); // 레이더 컨테이너의 실제 크기
+  const lastUpdateLocRef = useRef(null); // 마지막으로 DB에 업데이트한 위치 저장
 
   // 1. 익명 로그인 및 위치 추적 시작
   useEffect(() => {
     signInAnonymously(auth).then((userCredential) => {
       setUserId(userCredential.user.uid);
+    }).catch(err => {
+      console.error("Auth Error:", err);
+      setError("Firebase 인증에 실패했습니다. 설정을 확인하세요.");
     });
 
     if ("geolocation" in navigator) {
@@ -58,10 +66,15 @@ function App() {
             lon: pos.coords.longitude
           });
         },
-        (err) => console.error(err),
+        (err) => {
+          console.error("Geo Error:", err);
+          setError("위치 권한을 허용해야 앱을 사용할 수 있습니다.");
+        },
         { enableHighAccuracy: true }
       );
       return () => navigator.geolocation.clearWatch(watchId);
+    } else {
+      setError("이 브라우저는 위치 정보를 지원하지 않습니다.");
     }
   }, []);
 
@@ -76,11 +89,30 @@ function App() {
         lat: myLocation.lat,
         lon: myLocation.lon,
         lastSeen: serverTimestamp()
-      }, { merge: true });
+      }, { merge: true }).catch(err => {
+        // AbortError 또는 네트워크 중단 에러는 콘솔에 출력하지 않고 무시합니다.
+        if (err.name !== 'AbortError' && err.code !== 'cancelled') {
+          console.error("Firestore Update Error:", err);
+        }
+      });
     };
+    
+    // 마지막 업데이트 위치와 현재 위치 비교
+    if (!lastUpdateLocRef.current) {
+      // 처음 위치를 가져왔을 때 업데이트
+      updateStatus();
+      lastUpdateLocRef.current = myLocation;
+    } else {
+      const dist = getDistance(
+        lastUpdateLocRef.current.lat, lastUpdateLocRef.current.lon,
+        myLocation.lat, myLocation.lon
+      );
 
-    // 위치가 바뀔 때 즉시 업데이트
-    updateStatus();
+      if (dist >= 5) { // 5미터 이상 이동 시에만 업데이트
+        updateStatus();
+        lastUpdateLocRef.current = myLocation;
+      }
+    }
 
     // 움직이지 않아도 30초마다 활동 시간 갱신 (하트비트)
     const heartbeat = setInterval(updateStatus, 30000);
@@ -105,17 +137,31 @@ function App() {
   useEffect(() => {
     if (!userId) return;
 
-    const handleCleanup = async () => {
-      const userDoc = doc(db, 'users', userId);
-      await deleteDoc(userDoc);
+    const userDoc = doc(db, 'users', userId);
+
+    const handleCleanup = () => {
+      // async/await를 제거하고 에러를 무시하도록 처리합니다.
+      // 브라우저 종료 시 발생하는 AbortError는 앱 로직에 치명적이지 않습니다.
+      deleteDoc(userDoc).catch(() => { /* 종료 시 발생하는 중단 에러 무시 */ });
     };
 
     window.addEventListener('beforeunload', handleCleanup);
     return () => {
-      handleCleanup();
       window.removeEventListener('beforeunload', handleCleanup);
     };
   }, [userId]);
+
+  // 레이더 컨테이너의 실제 크기를 측정하고 상태에 저장
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (radarRef.current) {
+        setRadarDimensions({ width: radarRef.current.offsetWidth, height: radarRef.current.offsetHeight });
+      }
+    };
+    updateDimensions(); // 초기 마운트 시 한 번 호출
+    window.addEventListener('resize', updateDimensions); // 창 크기 변경 시 다시 호출
+    return () => window.removeEventListener('resize', updateDimensions); // 클린업
+  }, []);
 
   // 메시지 전송 함수
   const sendMessage = (e) => {
@@ -150,6 +196,10 @@ function App() {
   // 선택된 사용자 정보 찾기
   const selectedUser = users.find(u => u.id === selectedUserId);
 
+  // 충돌 감지를 위한 마커의 유효 반경 (픽셀 단위)
+  const COLLISION_RADIUS_PX = 35; // user-icon (50px) + 여백, 말풍선 등을 고려한 충돌 반경
+  const placedMarkerPositions = []; // 현재 렌더링 주기에서 이미 배치된 마커들의 위치를 저장
+
   return (
     <div className="chat-app">
       <section id="center">
@@ -176,21 +226,101 @@ function App() {
         </header>
 
         <div className="hero">
-          {!myLocation ? (
-            <p style={{ padding: '20px' }}>위치 정보를 불러오는 중...</p>
+          {error ? (
+            <div style={{ color: '#ff4d4f', padding: '20px', textAlign: 'center' }}>
+              <p>{error}</p>
+              <button onClick={() => window.location.reload()} style={{marginTop: '10px', padding: '5px 10px'}}>재시도</button>
+            </div>
+          ) : !myLocation ? (
+            <p style={{ padding: '20px' }}>위치 정보를 가져오고 있습니다...</p>
           ) : (
-            <div className="radar-container">
+            <div className="radar-container" ref={radarRef}> {/* ref 연결 */}
+              <div className="radar-sweep"></div>
               {displayUsers.map(user => {
                 const isMe = user.id === userId;
-                const distanceValue = isMe ? "나" : `${Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon)).toLocaleString()}m`;
+                const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
+                const distanceValue = isMe ? "나" : `${Math.round(dist).toLocaleString()}m`;
                 
-                // ID를 기반으로 결정론적인(안정적인) 무작위 위치 생성 (10% ~ 90% 사이)
                 let hash = 0;
                 for (let i = 0; i < user.id.length; i++) {
                   hash = user.id.charCodeAt(i) + ((hash << 5) - hash);
                 }
-                const left = Math.abs(hash % 80) + 10;
-                const top = Math.abs((hash >> 8) % 70) + 15;
+
+                let left, top; // 최종적으로 마커가 배치될 퍼센트 위치
+
+                if (isMe) {
+                  left = 50; top = 50; // '나'는 항상 중앙
+                  // '나'의 위치를 배치된 마커 목록에 추가
+                  placedMarkerPositions.push({
+                    id: user.id,
+                    pixelX: (radarDimensions.width / 100) * 50,
+                    pixelY: (radarDimensions.height / 100) * 50,
+                    collisionRadius: COLLISION_RADIUS_PX,
+                  });
+                } else {
+                  // 초기 위치 계산 (거리 및 해시 기반)
+                  let initialAngle = (Math.abs(hash) % 360) * (Math.PI / 180);
+                  const maxRadius = 45; // 레이더 중앙에서 최대 퍼센트 반경
+                  const displayMaxDist = filterDist === Infinity ? 2000 : filterDist;
+                  let initialRadialPercent = Math.min((dist / displayMaxDist) * maxRadius + 10, maxRadius);
+
+                  let currentAngle = initialAngle;
+                  let currentRadialPercent = initialRadialPercent;
+
+                  const MAX_COLLISION_ATTEMPTS = 50; // 충돌 회피 시도 횟수 제한
+                  let attempts = 0;
+                  let collided = true;
+
+                  let currentPixelX, currentPixelY;
+
+                  // 레이더 컨테이너의 크기가 아직 측정되지 않았다면 충돌 감지 건너뛰기
+                  if (radarDimensions.width === 0 || radarDimensions.height === 0) {
+                    collided = false; // 충돌 감지 없이 초기 위치 사용
+                  }
+
+                  // 충돌이 없을 때까지 또는 최대 시도 횟수에 도달할 때까지 위치 조정
+                  while (collided && attempts < MAX_COLLISION_ATTEMPTS) {
+                    collided = false;
+                    // 현재 각도와 반경으로 퍼센트 위치 계산
+                    let tempLeftPercent = 50 + currentRadialPercent * Math.cos(currentAngle);
+                    let tempTopPercent = 50 + currentRadialPercent * Math.sin(currentAngle);
+
+                    // 퍼센트 위치를 픽셀 위치로 변환 (충돌 감지를 위해)
+                    currentPixelX = (radarDimensions.width / 100) * tempLeftPercent;
+                    currentPixelY = (radarDimensions.height / 100) * tempTopPercent;
+
+                    // 이미 배치된 마커들과 충돌하는지 확인
+                    for (const placed of placedMarkerPositions) {
+                      const dx = currentPixelX - placed.pixelX;
+                      const dy = currentPixelY - placed.pixelY;
+                      const distanceBetweenCenters = Math.sqrt(dx * dx + dy * dy);
+
+                      // 두 마커의 중심 간 거리가 충돌 반경의 합보다 작으면 충돌
+                      if (distanceBetweenCenters < (COLLISION_RADIUS_PX + placed.collisionRadius)) {
+                        collided = true;
+                        // 충돌 감지, 각도를 미세하게 조정하여 다른 위치 시도
+                        currentAngle += (15 * (Math.PI / 180)); // 15도 회전
+                        // 각도가 2PI(360도)를 넘어가면 다시 0-2PI 범위로 조정
+                        if (currentAngle > 2 * Math.PI) currentAngle -= 2 * Math.PI;
+                        break; // 새로운 각도로 다시 모든 배치된 마커와 충돌 검사
+                      }
+                    }
+                    attempts++;
+                  }
+
+                  // 충돌 회피 후 최종 위치 설정
+                  // (최대 시도 횟수에 도달했거나 레이더 크기가 0인 경우 초기 위치 사용)
+                  left = 50 + currentRadialPercent * Math.cos(currentAngle);
+                  top = 50 + currentRadialPercent * Math.sin(currentAngle);
+
+                  // 최종 픽셀 위치를 배치된 마커 목록에 추가
+                  placedMarkerPositions.push({
+                    id: user.id,
+                    pixelX: (radarDimensions.width / 100) * left,
+                    pixelY: (radarDimensions.height / 100) * top,
+                    collisionRadius: COLLISION_RADIUS_PX,
+                  });
+                }
 
                 return (
                   <div 
@@ -239,4 +369,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

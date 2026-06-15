@@ -39,18 +39,70 @@ html, body {
 
 .hero {
   position: relative;
-  width: 100%;
-  height: 400px;
-  background: #ffffff;
-  border-radius: 20px;
+  /* 원의 크기를 500px로 확대, 화면이 작을 경우 뷰포트 너비/높이에 맞춤 */
+  width: min(500px, 85vw, 60vh);
+  height: min(500px, 85vw, 60vh);
+  background: radial-gradient(circle, #1a1625 0%, #0f0d15 100%);
+  border-radius: 50%;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
+  border: 3px solid #a78bfa;
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.3), inset 0 0 50px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 레이더 동심원 효과 */
+.radar-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    /* 중앙 십자선 (더 진하게) */
+    linear-gradient(90deg, transparent 49.8%, rgba(167, 139, 250, 0.3) 50%, transparent 50.2%),
+    linear-gradient(0deg, transparent 49.8%, rgba(167, 139, 250, 0.3) 50%, transparent 50.2%),
+    /* 수직 격자선 */
+    repeating-linear-gradient(90deg, transparent 0, transparent 49px, rgba(167, 139, 250, 0.05) 50px),
+    /* 수평 격자선 */
+    repeating-linear-gradient(0deg, transparent 0, transparent 49px, rgba(167, 139, 250, 0.05) 50px),
+    /* 기존 동심원 효과 */
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0,
+      transparent 49px,
+      rgba(167, 139, 250, 0.1) 50px
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 레이더 스캔 애니메이션 */
+.radar-sweep {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 50%;
+  background: conic-gradient(from 0deg at 0% 100%, rgba(167, 139, 250, 0.4) 0deg, transparent 90deg);
+  transform-origin: bottom left;
+  border-top-right-radius: 100%;
+  top: 0;
+  left: 50%;
+  animation: sweep 4s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
 }
 
 .radar-container {
   width: 100%;
   height: 100%;
   position: relative;
+  z-index: 3;
 }
 
 .user-marker {
@@ -60,12 +112,14 @@ html, body {
   align-items: center;
   cursor: pointer;
   transform: translate(-50%, -50%);
-  transition: all 0.5s ease-out; /* 위치 변경 시 부드럽게 이동 */
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
 }
 
 .user-icon {
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.8));
   transition: transform 0.2s;
+  border-radius: 50%;
 }
 
 .user-marker:hover .user-icon {
