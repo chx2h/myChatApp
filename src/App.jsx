@@ -138,8 +138,8 @@ function App() {
     
     // 거리 계산
     const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
-    // 1분 이내에 활동한 사용자만 온라인으로 간주 (Firestore Timestamp는 Date 객체로 변환됨)
-    const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.getTime() < 60000) : false;
+    // 1분 이내에 활동한 사용자만 온라인으로 간주 (Firestore Timestamp는 toMillis() 사용)
+    const isOnline = user.lastSeen?.toMillis ? (Date.now() - user.lastSeen.toMillis() < 60000) : false;
     
     return (filterDist === Infinity || dist <= filterDist) && isOnline;
   });
