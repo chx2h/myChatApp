@@ -144,12 +144,24 @@ function App() {
     <div className="chat-app">
       <section id="center">
         <header>
-          <h1>{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1>
+          <h1 className="distance-display">{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1>
           <div className="filter-buttons">
-            <button onClick={() => setFilterDist(300)}>300m</button>
-            <button onClick={() => setFilterDist(500)}>500m</button>
-            <button onClick={() => setFilterDist(1000)}>1km</button>
-            <button onClick={() => setFilterDist(Infinity)}>무제한</button>
+            <button 
+              className={filterDist === 300 ? 'active' : ''} 
+              onClick={() => setFilterDist(300)}
+            >300m</button>
+            <button 
+              className={filterDist === 500 ? 'active' : ''} 
+              onClick={() => setFilterDist(500)}
+            >500m</button>
+            <button 
+              className={filterDist === 1000 ? 'active' : ''} 
+              onClick={() => setFilterDist(1000)}
+            >1km</button>
+            <button 
+              className={filterDist === Infinity ? 'active' : ''} 
+              onClick={() => setFilterDist(Infinity)}
+            >무제한</button>
           </div>
         </header>
 
