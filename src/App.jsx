@@ -142,7 +142,7 @@ function App() {
     <div className="chat-app">
       <section id="center">
         <header>
-          <h1>주변 채팅 ({filterDist}m)</h1>
+          <h1>{filterDist}m</h1>
           <div className="filter-buttons">
             <button onClick={() => setFilterDist(300)}>300m</button>
             <button onClick={() => setFilterDist(500)}>500m</button>
