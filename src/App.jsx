@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, query, where, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import heroImg from './assets/hero.png'
 import './App.css'
 
 // Firebase 설정 (본인의 Firebase 프로젝트 설정값으로 교체 필요)
@@ -131,7 +132,7 @@ function App() {
     // 1분 이내에 활동한 사용자만 온라인으로 간주
     const isOnline = user.lastSeen ? (Date.now() - user.lastSeen.toMillis() < 60000) : false;
     
-    return (filterDist === Infinity || dist <= filterDist) && isOnline;
+    return dist <= filterDist && isOnline;
   });
 
   // 나를 포함한 전체 표시 리스트
@@ -144,24 +145,11 @@ function App() {
     <div className="chat-app">
       <section id="center">
         <header>
-          <h1 className="distance-display">{filterDist === Infinity ? "무제한" : `${filterDist}m`}</h1>
+          <h1>{filterDist}m</h1>
           <div className="filter-buttons">
-            <button 
-              className={filterDist === 300 ? 'active' : ''} 
-              onClick={() => setFilterDist(300)}
-            >300m</button>
-            <button 
-              className={filterDist === 500 ? 'active' : ''} 
-              onClick={() => setFilterDist(500)}
-            >500m</button>
-            <button 
-              className={filterDist === 1000 ? 'active' : ''} 
-              onClick={() => setFilterDist(1000)}
-            >1km</button>
-            <button 
-              className={filterDist === Infinity ? 'active' : ''} 
-              onClick={() => setFilterDist(Infinity)}
-            >무제한</button>
+            <button onClick={() => setFilterDist(300)}>300m</button>
+            <button onClick={() => setFilterDist(500)}>500m</button>
+            <button onClick={() => setFilterDist(1000)}>1km</button>
           </div>
         </header>
 
@@ -169,27 +157,33 @@ function App() {
           {!myLocation ? (
             <p style={{ padding: '20px' }}>위치 정보를 불러오는 중...</p>
           ) : (
-            <table className="user-table">
-              <thead>
-                <tr>
-                  <th>구분</th>
-                  <th>메시지</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayUsers.map(user => {
-                  const isMe = user.id === userId;
-                  const distanceValue = isMe ? "-" : `${Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon))}m`;
-                  
-                  return (
-                    <tr key={user.id} className={isMe ? 'is-me' : ''} onClick={() => setSelectedUserId(user.id)}>
-                      <td>{isMe ? "나" : "사용자"} ({distanceValue})</td>
-                      <td className="msg-cell">{user.message || ""}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="radar-container">
+              {displayUsers.map(user => {
+                const isMe = user.id === userId;
+                const distanceValue = isMe ? "나" : `${Math.round(getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon))}m`;
+                
+                // ID를 기반으로 결정론적인(안정적인) 무작위 위치 생성 (10% ~ 90% 사이)
+                let hash = 0;
+                for (let i = 0; i < user.id.length; i++) {
+                  hash = user.id.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const left = Math.abs(hash % 80) + 10;
+                const top = Math.abs((hash >> 8) % 70) + 15;
+
+                return (
+                  <div 
+                    key={user.id} 
+                    className={`user-marker ${isMe ? 'is-me' : ''}`} 
+                    style={{ left: `${left}%`, top: `${top}%` }}
+                    onClick={() => setSelectedUserId(user.id)}
+                  >
+                    {user.message && <div className="chat-bubble">{user.message}</div>}
+                    <img src={heroImg} className="user-icon" width="50" alt="user" />
+                    <span className="user-label">{isMe ? "나" : distanceValue}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
