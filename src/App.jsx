@@ -39,7 +39,7 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 function App() {
   const [userId, setUserId] = useState(null);
   const [myLocation, setMyLocation] = useState(null);
-  const [filterDist, setFilterDist] = useState(1000); // 기본 1km
+  const [filterDist, setFilterDist] = useState(Infinity); // 기본 무제한
   const [users, setUsers] = useState([]);
   const [inputText, setInputText] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
