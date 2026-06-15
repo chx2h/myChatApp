@@ -1,0 +1,11 @@
+# 의존성 라이브러리
+node_modules/
+
+# 빌드 결과물
+dist/
+
+# 환경 변수 (중요: Firebase 키 유출 방지)
+.env
+.env.local
+.env.development.local
+.env.production.local
