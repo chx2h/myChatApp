@@ -43,11 +43,13 @@ function App() {
   const [users, setUsers] = useState([]);
   const [inputText, setInputText] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isClosing, setIsClosing] = useState(false); // 닫기 애니메이션 상태
   const [error, setError] = useState(null);
 
   const radarRef = useRef(null); // 레이더 컨테이너의 DOM 요소를 참조하기 위한 ref
   const [radarDimensions, setRadarDimensions] = useState({ width: 0, height: 0 }); // 레이더 컨테이너의 실제 크기
   const lastUpdateLocRef = useRef(null); // 마지막으로 DB에 업데이트한 위치 저장
+  const historyPanelRef = useRef(null); // 기록창 외부 클릭 감지를 위한 ref
 
   // 1. 익명 로그인 및 위치 추적 시작
   useEffect(() => {
@@ -163,6 +165,45 @@ function App() {
     return () => window.removeEventListener('resize', updateDimensions); // 클린업
   }, []);
 
+  // 통신 기록창 닫기 함수 (애니메이션 시작)
+  const handleCloseHistory = () => {
+    if (selectedUserId) {
+      setIsClosing(true);
+    }
+  };
+
+  // 애니메이션 종료 핸들러
+  const handleAnimationEnd = () => {
+    if (isClosing) {
+      setSelectedUserId(null);
+      setIsClosing(false);
+    }
+  };
+
+  // 외부 클릭 시 닫기 로직
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // 기록창이 열려 있고, 클릭된 요소가 기록창 내부가 아니며, 유저 마커가 아닐 때 닫기
+      if (
+        selectedUserId &&
+        historyPanelRef.current &&
+        !historyPanelRef.current.contains(event.target) &&
+        !event.target.closest('.user-marker')
+      ) {
+        handleCloseHistory();
+      }
+    };
+
+    if (selectedUserId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [selectedUserId, isClosing]);
+
   // 메시지 전송 함수
   const sendMessage = (e) => {
     e.preventDefault();
@@ -245,6 +286,9 @@ function App() {
                 const isMe = user.id === userId;
                 const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
                 const distanceValue = isMe ? "나" : `${Math.round(dist).toLocaleString()}m`;
+
+                // 최신 메시지 수신 여부 확인 (최근 5초 이내에 업데이트된 경우)
+                const isNewMessage = user.message && user.timestamp?.toMillis && (Date.now() - user.timestamp.toMillis() < 5000);
 
                 // 메시지가 있는 마커는 높은 z-index를, 그 중에서도 최신 메시지가 가장 높게
                 const dynamicZIndex = user.message ? (1000 - index) : 5;
@@ -338,7 +382,7 @@ function App() {
                 return (
                   <div 
                     key={user.id} 
-                    className={`user-marker ${isMe ? 'is-me' : ''}`} 
+                    className={`user-marker ${isMe ? 'is-me' : ''} ${isNewMessage ? 'has-new-msg' : ''}`} 
                     style={{ left: `${left}%`, top: `${top}%`, zIndex: dynamicZIndex }}
                     onClick={() => setSelectedUserId(user.id)}
                   >
@@ -363,10 +407,14 @@ function App() {
         </form>
 
         {selectedUser && (
-          <div className="history-panel">
+          <div 
+            ref={historyPanelRef}
+            className={`history-panel ${isClosing ? 'closing' : ''}`}
+            onAnimationEnd={handleAnimationEnd}
+          >
             <div className="history-header">
               <h3>{selectedUser.id === userId ? "나" : "탐지된 신호"}의 통신 기록</h3>
-              <button onClick={() => setSelectedUserId(null)}>닫기</button>
+              <button onClick={handleCloseHistory}>닫기</button>
             </div>
             <div className="history-content">
               {selectedUser.history?.map((msg, index) => (
