@@ -226,7 +226,7 @@ function App() {
             <button 
               className={filterDist === Infinity ? 'active' : ''} 
               onClick={() => setFilterDist(Infinity)}
-            >무제한</button>
+            >최대 범위</button>
           </div>
         </header>
 
@@ -237,7 +237,7 @@ function App() {
               <button onClick={() => window.location.reload()} style={{marginTop: '10px', padding: '5px 10px'}}>재시도</button>
             </div>
           ) : !myLocation ? (
-            <p className="loading-text">위치 정보를 가져오고 있습니다...</p>
+            <p className="loading-text">시스템 가동 중... 좌표 수신 중</p>
           ) : (
             <div className="radar-container" ref={radarRef}> {/* ref 연결 */}
               <div className="radar-sweep"></div>
@@ -357,7 +357,7 @@ function App() {
             type="text" 
             value={inputText} 
             onChange={(e) => setInputText(e.target.value)} 
-            placeholder="주변 사람들에게 한마디..."
+            placeholder="메시지 주파수 송신..."
           />
           <button type="submit">전송</button>
         </form>
@@ -365,7 +365,7 @@ function App() {
         {selectedUser && (
           <div className="history-panel">
             <div className="history-header">
-              <h3>{selectedUser.id === userId ? "나" : "주변 사용자"}의 채팅 기록</h3>
+              <h3>{selectedUser.id === userId ? "나" : "탐지된 신호"}의 통신 기록</h3>
               <button onClick={() => setSelectedUserId(null)}>닫기</button>
             </div>
             <div className="history-content">

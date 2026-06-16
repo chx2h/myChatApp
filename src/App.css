@@ -208,9 +208,10 @@ html, body {
 
 .loading-text {
   padding: 20px;
-  color: #444; /* 대비를 높인 진회색 */
+  color: #f0f0f0; /* 우주 배경에서도 잘 보이도록 밝은 회색으로 변경 */
   font-weight: 600;
   text-align: center;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* 가독성을 위한 그림자 효과 */
 }
 
 .chat-bubble::after {
