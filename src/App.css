@@ -3,7 +3,7 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* 전체 화면 스크롤 방지 */
+  overflow: hidden; 
 }
 
 .distance-display {
@@ -39,9 +39,9 @@ html, body {
 
 .hero {
   position: relative;
-  /* 원의 크기를 500px로 확대, 화면이 작을 경우 뷰포트 너비/높이에 맞춤 */
-  width: min(500px, 85vw, 60vh);
-  height: min(500px, 85vw, 60vh);
+  /* 레이더의 최대 크기를 800px로 확장하여 더 꽉 차 보이게 수정 */
+  width: min(800px, 90vw, 70vh);
+  height: min(800px, 90vw, 70vh);
   background: transparent;
   border-radius: 50%;
   border: 10px solid #5d6d7e; /* 어두운 금속 느낌의 회색 */
@@ -74,8 +74,8 @@ html, body {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-image: 
-    linear-gradient(rgba(46, 204, 113, 0.25) 2px, transparent 2px),
-    linear-gradient(90deg, rgba(46, 204, 113, 0.25) 2px, transparent 2px);
+    linear-gradient(rgba(46, 204, 113, 0.15) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(46, 204, 113, 0.15) 1.5px, transparent 1.5px);
   background-size: 40px 40px; /* 드래곤볼 레이더 특유의 사각형 격자 */
   background-position: center;
   border-radius: 50%;
@@ -90,7 +90,15 @@ html, body {
   left: 50%;
   width: 50%;
   height: 50%;
-  background: conic-gradient(from 0deg at 0% 100%, transparent 30deg, rgba(46, 204, 113, 0.3) 90deg);
+  /* 90도 끝부분에 아주 밝은 흰색 하이라이트를 추가하여 격자가 반짝이게 함 */
+  background: conic-gradient(
+    from 0deg at 0% 100%, 
+    transparent 20deg, 
+    rgba(46, 204, 113, 0.1) 60deg, 
+    rgba(46, 204, 113, 0.6) 88deg, 
+    rgba(255, 255, 255, 1) 90deg, 
+    transparent 91deg
+  );
   transform-origin: bottom left;
   border-top-right-radius: 100%;
   top: 0;
@@ -98,6 +106,8 @@ html, body {
   animation: sweep 4s linear infinite;
   pointer-events: none;
   z-index: 2;
+  mix-blend-mode: screen; /* 격자 선과 겹칠 때 밝게 빛나도록 설정 */
+  filter: blur(0.5px); /* 약간의 빛 번짐 효과 */
 }
 
 @keyframes sweep {
@@ -290,10 +300,10 @@ html, body {
   place-content: center;
   place-items: center;
   flex-grow: 1;
-  background-color: #e5e5e5;
+  background-color: #f0f0f0;
   min-height: 100vh;
   padding: 20px;
-  width: 100vw;
+  width: 100%;
   overflow-x: hidden;
   overflow-y: auto; /* 모바일에서 스크롤 가능하도록 변경 */
   color: #333;
