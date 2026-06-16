@@ -42,31 +42,61 @@ html, body {
   /* 원의 크기를 500px로 확대, 화면이 작을 경우 뷰포트 너비/높이에 맞춤 */
   width: min(500px, 85vw, 60vh);
   height: min(500px, 85vw, 60vh);
-  background: #1b3d2f; /* 드래곤볼 레이더 특유의 짙은 녹색 */
+  background: transparent; /* 버튼이 보이도록 배경 제거 */
   border-radius: 50%;
-  border: 15px solid #d1d1d1; /* 금속 느낌의 외곽 실버 프레임 */
+  border: 20px solid #bdc3c7; /* 더 두껍고 명확한 금속 프레임 */
   box-shadow: 
-    0 0 0 5px #999, /* 외곽 입체감 */
-    0 15px 35px rgba(0, 0, 0, 0.4), 
-    inset 0 0 60px rgba(0, 0, 0, 0.7);
+    0 0 0 4px #7f8c8d, /* 테두리 경계선 */
+    0 20px 50px rgba(0, 0, 0, 0.5); /* 바닥 그림자 */
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: visible; /* 상단 버튼과 측면 다이얼이 잘리지 않게 설정 */
 }
 
-/* 레이더 상단 버튼 */
+/* 레이더 상단 노란색 돔 버튼 */
 .hero::after {
   content: '';
   position: absolute;
-  top: -35px;
-  width: 60px;
-  height: 30px;
-  background: #d1d1d1;
-  border-radius: 10px 10px 0 0;
-  border: 4px solid #999;
-  border-bottom: none;
+  top: -55px;
+  width: 55px;
+  height: 45px;
+  background: linear-gradient(to bottom, #f1c40f, #d4ac0d); /* 황금빛 노란색 */
+  border: 5px solid #7f8c8d;
+  border-radius: 20px 20px 5px 5px;
+  box-shadow: 0 4px 0 #95a5a6, inset 0 2px 5px rgba(255,255,255,0.5);
   z-index: -1;
+}
+
+/* 레이더 측면 다이얼 버튼 */
+.hero::before {
+  content: '';
+  position: absolute;
+  right: -32px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 50px;
+  background: #bdc3c7;
+  border: 4px solid #7f8c8d;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  z-index: -1;
+}
+
+/* 화면 유리 반사광 효과 */
+.radar-container::after {
+  content: '';
+  position: absolute;
+  top: 5%;
+  left: 10%;
+  width: 80%;
+  height: 40%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
+  z-index: 15; /* 말풍선보다 위에서 반사광 효과 제공 */
 }
 
 /* 레이더 동심원 효과 */
@@ -109,6 +139,10 @@ html, body {
 .radar-container {
   width: 100%;
   height: 100%;
+  background: #1b3d2f; /* 화면 색상을 컨테이너로 이동 */
+  border-radius: 50%;
+  overflow: hidden; /* 내부 격자와 스윕 애니메이션만 자름 */
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
   position: relative;
   z-index: 3;
 }
