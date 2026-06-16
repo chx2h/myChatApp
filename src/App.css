@@ -62,7 +62,7 @@ html, body {
   left: 10%;
   width: 80%;
   height: 40%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 60%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 65%);
   border-radius: 50% 50% 0 0;
   pointer-events: none;
   z-index: 15; /* 말풍선보다 위에서 반사광 효과 제공 */
@@ -108,10 +108,10 @@ html, body {
 .radar-container {
   width: 100%;
   height: 100%;
-  background: #1e4d35; /* 원작과 유사한 진한 녹색 화면 */
+  background: #1b422e;
   border-radius: 50%;
   overflow: hidden; /* 내부 격자와 스윕 애니메이션만 자름 */
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0,0,0,0.4);
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0,0,0,0.5);
   position: relative;
   z-index: 3;
 }
@@ -188,6 +188,13 @@ html, body {
   box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3);
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   z-index: 10;
+}
+
+.loading-text {
+  padding: 20px;
+  color: #444; /* 대비를 높인 진회색 */
+  font-weight: 600;
+  text-align: center;
 }
 
 .chat-bubble::after {
@@ -283,7 +290,7 @@ html, body {
   place-content: center;
   place-items: center;
   flex-grow: 1;
-  background-color: #f0f0f0; /* 배경을 약간 눌러 레이더가 돋보이게 함 */
+  background-color: #e5e5e5;
   min-height: 100vh;
   padding: 20px;
   width: 100vw;

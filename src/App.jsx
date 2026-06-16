@@ -237,7 +237,7 @@ function App() {
               <button onClick={() => window.location.reload()} style={{marginTop: '10px', padding: '5px 10px'}}>재시도</button>
             </div>
           ) : !myLocation ? (
-            <p style={{ padding: '20px' }}>위치 정보를 가져오고 있습니다...</p>
+            <p className="loading-text">위치 정보를 가져오고 있습니다...</p>
           ) : (
             <div className="radar-container" ref={radarRef}> {/* ref 연결 */}
               <div className="radar-sweep"></div>
