@@ -193,11 +193,17 @@ function App() {
   // 나를 포함한 전체 표시 리스트
   const displayUsers = me ? [me, ...nearbyUsers] : nearbyUsers;
 
+  // 메시지가 있는 사용자들을 timestamp 기준으로 정렬하여 최신 메시지가 위에 오도록 z-index 부여
+  displayUsers.sort((a, b) => {
+    const timeA = a.timestamp?.toMillis() || 0;
+    const timeB = b.timestamp?.toMillis() || 0;
+    return timeB - timeA; // 최신 메시지가 앞으로 오도록 내림차순 정렬
+  });
+
   // 선택된 사용자 정보 찾기
   const selectedUser = users.find(u => u.id === selectedUserId);
 
   // 충돌 감지를 위한 마커의 유효 반경 (픽셀 단위)
-  const COLLISION_RADIUS_PX = 35; // user-icon (50px) + 여백, 말풍선 등을 고려한 충돌 반경
   const placedMarkerPositions = []; // 현재 렌더링 주기에서 이미 배치된 마커들의 위치를 저장
 
   return (
@@ -235,10 +241,16 @@ function App() {
           ) : (
             <div className="radar-container" ref={radarRef}> {/* ref 연결 */}
               <div className="radar-sweep"></div>
-              {displayUsers.map(user => {
+              {displayUsers.map((user, index) => {
                 const isMe = user.id === userId;
                 const dist = getDistance(myLocation.lat, myLocation.lon, user.lat, user.lon);
                 const distanceValue = isMe ? "나" : `${Math.round(dist).toLocaleString()}m`;
+
+                // 메시지가 있는 마커는 높은 z-index를, 그 중에서도 최신 메시지가 가장 높게
+                const dynamicZIndex = user.message ? (1000 - index) : 5;
+
+                // 충돌 감지를 위한 마커의 유효 반경 (픽셀 단위)
+                const userCollisionRadius = 35;
                 
                 let hash = 0;
                 for (let i = 0; i < user.id.length; i++) {
@@ -254,14 +266,15 @@ function App() {
                     id: user.id,
                     pixelX: (radarDimensions.width / 100) * 50,
                     pixelY: (radarDimensions.height / 100) * 50,
-                    collisionRadius: COLLISION_RADIUS_PX,
+                    collisionRadius: userCollisionRadius,
                   });
                 } else {
                   // 초기 위치 계산 (거리 및 해시 기반)
                   let initialAngle = (Math.abs(hash) % 360) * (Math.PI / 180);
-                  const maxRadius = 45; // 레이더 중앙에서 최대 퍼센트 반경
+                // 레이더 원 안쪽에 안전하게 배치하기 위해 최대 반경을 35%로 제한 (아이콘 및 라벨 공간 확보)
+                const maxRadius = 35; 
                   const displayMaxDist = filterDist === Infinity ? 2000 : filterDist;
-                  let initialRadialPercent = Math.min((dist / displayMaxDist) * maxRadius + 10, maxRadius);
+                let initialRadialPercent = 10 + (Math.min(dist, displayMaxDist) / displayMaxDist) * (maxRadius - 10);
 
                   let currentAngle = initialAngle;
                   let currentRadialPercent = initialRadialPercent;
@@ -295,10 +308,11 @@ function App() {
                       const distanceBetweenCenters = Math.sqrt(dx * dx + dy * dy);
 
                       // 두 마커의 중심 간 거리가 충돌 반경의 합보다 작으면 충돌
-                      if (distanceBetweenCenters < (COLLISION_RADIUS_PX + placed.collisionRadius)) {
+                      if (distanceBetweenCenters < (userCollisionRadius + placed.collisionRadius)) {
                         collided = true;
                         // 충돌 감지, 각도를 미세하게 조정하여 다른 위치 시도
                         currentAngle += (15 * (Math.PI / 180)); // 15도 회전
+
                         // 각도가 2PI(360도)를 넘어가면 다시 0-2PI 범위로 조정
                         if (currentAngle > 2 * Math.PI) currentAngle -= 2 * Math.PI;
                         break; // 새로운 각도로 다시 모든 배치된 마커와 충돌 검사
@@ -317,7 +331,7 @@ function App() {
                     id: user.id,
                     pixelX: (radarDimensions.width / 100) * left,
                     pixelY: (radarDimensions.height / 100) * top,
-                    collisionRadius: COLLISION_RADIUS_PX,
+                    collisionRadius: userCollisionRadius,
                   });
                 }
 
@@ -325,11 +339,11 @@ function App() {
                   <div 
                     key={user.id} 
                     className={`user-marker ${isMe ? 'is-me' : ''}`} 
-                    style={{ left: `${left}%`, top: `${top}%` }}
+                    style={{ left: `${left}%`, top: `${top}%`, zIndex: dynamicZIndex }}
                     onClick={() => setSelectedUserId(user.id)}
                   >
                     {user.message && <div className="chat-bubble">{user.message}</div>}
-                    <img src={heroImg} className="user-icon" width="50" alt="user" />
+                    <img src={heroImg} className="user-icon" alt="user" />
                     <span className="user-label">{isMe ? "나" : distanceValue}</span>
                   </div>
                 );

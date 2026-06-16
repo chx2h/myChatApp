@@ -42,14 +42,31 @@ html, body {
   /* 원의 크기를 500px로 확대, 화면이 작을 경우 뷰포트 너비/높이에 맞춤 */
   width: min(500px, 85vw, 60vh);
   height: min(500px, 85vw, 60vh);
-  background: radial-gradient(circle, #1a1625 0%, #0f0d15 100%);
+  background: #1b3d2f; /* 드래곤볼 레이더 특유의 짙은 녹색 */
   border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid #a78bfa;
-  box-shadow: 0 0 30px rgba(167, 139, 250, 0.3), inset 0 0 50px rgba(0, 0, 0, 0.5);
+  border: 15px solid #d1d1d1; /* 금속 느낌의 외곽 실버 프레임 */
+  box-shadow: 
+    0 0 0 5px #999, /* 외곽 입체감 */
+    0 15px 35px rgba(0, 0, 0, 0.4), 
+    inset 0 0 60px rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+/* 레이더 상단 버튼 */
+.hero::after {
+  content: '';
+  position: absolute;
+  top: -35px;
+  width: 60px;
+  height: 30px;
+  background: #d1d1d1;
+  border-radius: 10px 10px 0 0;
+  border: 4px solid #999;
+  border-bottom: none;
+  z-index: -1;
 }
 
 /* 레이더 동심원 효과 */
@@ -57,21 +74,12 @@ html, body {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: 
-    /* 중앙 십자선 (더 진하게) */
-    linear-gradient(90deg, transparent 49.8%, rgba(167, 139, 250, 0.3) 50%, transparent 50.2%),
-    linear-gradient(0deg, transparent 49.8%, rgba(167, 139, 250, 0.3) 50%, transparent 50.2%),
-    /* 수직 격자선 */
-    repeating-linear-gradient(90deg, transparent 0, transparent 49px, rgba(167, 139, 250, 0.05) 50px),
-    /* 수평 격자선 */
-    repeating-linear-gradient(0deg, transparent 0, transparent 49px, rgba(167, 139, 250, 0.05) 50px),
-    /* 기존 동심원 효과 */
-    repeating-radial-gradient(
-      circle at 50% 50%,
-      transparent 0,
-      transparent 49px,
-      rgba(167, 139, 250, 0.1) 50px
-    );
+  background-image: 
+    linear-gradient(rgba(46, 204, 113, 0.2) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(46, 204, 113, 0.2) 1.5px, transparent 1.5px);
+  background-size: 40px 40px; /* 드래곤볼 레이더 특유의 사각형 격자 */
+  background-position: center;
+  border-radius: 50%;
   pointer-events: none;
   z-index: 1;
 }
@@ -83,7 +91,7 @@ html, body {
   left: 50%;
   width: 50%;
   height: 50%;
-  background: conic-gradient(from 0deg at 0% 100%, rgba(167, 139, 250, 0.4) 0deg, transparent 90deg);
+  background: conic-gradient(from 0deg at 0% 100%, rgba(46, 204, 113, 0.3) 0deg, transparent 60deg);
   transform-origin: bottom left;
   border-top-right-radius: 100%;
   top: 0;
@@ -108,28 +116,41 @@ html, body {
 .user-marker {
   position: absolute;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center; /* 아이콘을 중심점(좌표)에 고정 */
   cursor: pointer;
   transform: translate(-50%, -50%);
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 5;
+  width: 24px; /* 아이콘 크기에 맞춰 영역 고정 */
+  height: 24px;
 }
 
 .user-icon {
-  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.8));
-  transition: transform 0.2s;
+  width: 24px; /* 드래곤볼처럼 작은 점으로 변경 */
+  height: 24px;
+  background: #f1c40f; /* 밝은 노란색 */
+  border: 2px solid #e67e22; /* 주황색 테두리 */
   border-radius: 50%;
+  box-shadow: 0 0 15px #f1c40f;
+  animation: blink 1s ease-in-out infinite;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .user-marker:hover .user-icon {
-  transform: scale(1.1);
+  transform: scale(1.5);
 }
 
 .user-marker.is-me .user-icon {
-  border: 2px solid #a78bfa;
-  border-radius: 50%;
-  padding: 2px;
+  background: #ff4757; /* 내 위치는 빨간색으로 구분 */
+  border-color: #ff6b81;
+  box-shadow: 0 0 20px #ff4757;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.9); }
 }
 
 .user-label {
@@ -137,7 +158,11 @@ html, body {
   background: rgba(255, 255, 255, 0.8);
   padding: 2px 6px;
   border-radius: 10px;
-  margin-top: 4px;
+  position: absolute;
+  top: 20px; /* 아이콘 중심에서 아래로 고정 */
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   color: #666;
   font-weight: bold;
 }
@@ -148,11 +173,18 @@ html, body {
   padding: 6px 12px;
   border-radius: 12px;
   font-size: 13px;
-  margin-bottom: 8px;
-  white-space: nowrap;
+  position: absolute;
+  bottom: 28px; /* 아이콘 중심에서 위로 고정 (메시지가 길어져도 아래쪽은 이 위치에 고정) */
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 140px; /* 말풍선 최대 너비 제한 */
+  white-space: pre-wrap; /* 줄바꿈 허용 */
+  word-break: break-word;
+  text-align: center;
   box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3);
-  position: relative;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  z-index: 10;
 }
 
 .chat-bubble::after {
@@ -166,8 +198,8 @@ html, body {
 }
 
 @keyframes popIn {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from { transform: translateX(-50%) scale(0.5); opacity: 0; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
 }
 
 .chat-input-form {
