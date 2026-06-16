@@ -300,7 +300,11 @@ html, body {
   place-content: center;
   place-items: center;
   flex-grow: 1;
-  background-color: #2c3e50; /* 어두운 스틸 블루 계열로 변경하여 레이더와 조화롭게 */
+  background-image: url('./assets/11145955-space-art-5626853.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   min-height: 100vh;
   padding: 20px;
   width: 100%;
